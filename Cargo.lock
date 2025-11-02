@@ -3500,7 +3500,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "anyhow",
  "async-std",
@@ -3530,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-cli"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3554,7 +3554,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-core"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "async-fs",
  "async-global-executor 3.1.0",
@@ -3697,7 +3697,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-example-postgres-multi-database"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "color-eyre",
  "dotenvy",
@@ -3738,7 +3738,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-example-postgres-multi-tenant"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "color-eyre",
  "dotenvy",
@@ -3779,7 +3779,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-example-postgres-preferred-crates"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3794,7 +3794,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-example-postgres-preferred-crates-uses-rust-decimal"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "chrono",
  "rust_decimal",
@@ -3804,7 +3804,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-example-postgres-preferred-crates-uses-time"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "serde",
  "sqlx",
@@ -3852,7 +3852,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-macros"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3863,7 +3863,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-macros-core"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "async-global-executor 3.1.0",
  "async-std",
@@ -3890,7 +3890,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-mysql"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "atoi",
  "base64 0.22.1",
@@ -3935,7 +3935,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-postgres"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "atoi",
  "base64 0.22.1",
@@ -3980,7 +3980,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-sqlite"
-version = "0.9.0-alpha.1"
+version = "0.9.0-alpha.1.zenas"
 dependencies = [
  "atoi",
  "chrono",
