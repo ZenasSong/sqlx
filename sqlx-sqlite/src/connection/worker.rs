@@ -158,8 +158,10 @@ impl ConnectionWorker {
                         // but it doesn't matter in the grand scheme of things.
                         update_cached_statements_size(&conn, &shared.cached_statements_size);
                     }
+                    #[cfg(feature = "offline")]
                     Command::Describe { query, tx } => {
-                        tx.send(describe(&mut conn, query)).ok();
+                        tx.send(crate::connection::describe::describe(&mut conn, query))
+                            .ok();
                     }
                     Command::Execute {
                         query,
@@ -176,51 +178,12 @@ impl ConnectionWorker {
                             }
                         };
 
-                // If COMMIT or ROLLBACK is processed but not acknowledged, there would be another
-                // ROLLBACK sent when the `Transaction` drops. We need to ignore it otherwise we
-                // would rollback an already completed transaction.
-                let mut ignore_next_start_rollback = false;
-
-                for (cmd, span) in command_rx {
-                    let _guard = span.enter();
-                    match cmd {
-                        Command::Prepare { query, tx } => {
-                            tx.send(prepare(&mut conn, query)).ok();
-
-                            // This may issue an unnecessary write on failure,
-                            // but it doesn't matter in the grand scheme of things.
-                            update_cached_statements_size(
-                                &conn,
-                                &shared.cached_statements_size,
-                            );
-                        }
-                        #[cfg(feature = "offline")]
-                        Command::Describe { query, tx } => {
-                            tx.send(crate::connection::describe::describe(&mut conn, query)).ok();
-                        }
-                        Command::Execute {
-                            query,
-                            arguments,
-                            persistent,
-                            tx,
-                            limit
-                        } => {
-                            let iter = match execute::iter(&mut conn, query, arguments, persistent)
-                            {
-                                Ok(iter) => iter,
-                                Err(e) => {
-                                    tx.send(Err(e)).ok();
-                                    continue;
-                                }
-                            };
-
-                            match limit {
-                                None => {
-                                    for res in iter {
-                                        let has_error = res.is_err();
-                                        if tx.send(res).is_err() || has_error {
-                                            break;
-                                        }
+                        match limit {
+                            None => {
+                                for res in iter {
+                                    let has_error = res.is_err();
+                                    if tx.send(res).is_err() || has_error {
+                                        break;
                                     }
                                 }
                             }
