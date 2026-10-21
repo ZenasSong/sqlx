@@ -8,18 +8,16 @@ use futures_intrusive::sync::{Mutex, MutexGuard};
 use sqlx_core::sql_str::SqlStr;
 use tracing::span::Span;
 
-use sqlx_core::describe::Describe;
 use sqlx_core::error::Error;
 use sqlx_core::transaction::{
     begin_ansi_transaction_sql, commit_ansi_transaction_sql, rollback_ansi_transaction_sql,
 };
 use sqlx_core::Either;
 
-use crate::connection::describe::describe;
 use crate::connection::establish::EstablishParams;
 use crate::connection::execute;
 use crate::connection::ConnectionState;
-use crate::{Sqlite, SqliteArguments, SqliteQueryResult, SqliteRow, SqliteStatement};
+use crate::{SqliteArguments, SqliteQueryResult, SqliteRow, SqliteStatement};
 
 #[cfg(feature = "deserialize")]
 use crate::connection::deserialize::{deserialize, serialize, SchemaName, SqliteOwnedBuf};
@@ -57,9 +55,10 @@ enum Command {
         query: SqlStr,
         tx: oneshot::Sender<Result<SqliteStatement, Error>>,
     },
+    #[cfg(feature = "offline")]
     Describe {
         query: SqlStr,
-        tx: oneshot::Sender<Result<Describe<Sqlite>, Error>>,
+        tx: oneshot::Sender<Result<sqlx_core::describe::Describe<crate::Sqlite>, Error>>,
     },
     Execute {
         query: SqlStr,
@@ -177,12 +176,51 @@ impl ConnectionWorker {
                             }
                         };
 
-                        match limit {
-                            None => {
-                                for res in iter {
-                                    let has_error = res.is_err();
-                                    if tx.send(res).is_err() || has_error {
-                                        break;
+                // If COMMIT or ROLLBACK is processed but not acknowledged, there would be another
+                // ROLLBACK sent when the `Transaction` drops. We need to ignore it otherwise we
+                // would rollback an already completed transaction.
+                let mut ignore_next_start_rollback = false;
+
+                for (cmd, span) in command_rx {
+                    let _guard = span.enter();
+                    match cmd {
+                        Command::Prepare { query, tx } => {
+                            tx.send(prepare(&mut conn, query)).ok();
+
+                            // This may issue an unnecessary write on failure,
+                            // but it doesn't matter in the grand scheme of things.
+                            update_cached_statements_size(
+                                &conn,
+                                &shared.cached_statements_size,
+                            );
+                        }
+                        #[cfg(feature = "offline")]
+                        Command::Describe { query, tx } => {
+                            tx.send(crate::connection::describe::describe(&mut conn, query)).ok();
+                        }
+                        Command::Execute {
+                            query,
+                            arguments,
+                            persistent,
+                            tx,
+                            limit
+                        } => {
+                            let iter = match execute::iter(&mut conn, query, arguments, persistent)
+                            {
+                                Ok(iter) => iter,
+                                Err(e) => {
+                                    tx.send(Err(e)).ok();
+                                    continue;
+                                }
+                            };
+
+                            match limit {
+                                None => {
+                                    for res in iter {
+                                        let has_error = res.is_err();
+                                        if tx.send(res).is_err() || has_error {
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -359,7 +397,11 @@ impl ConnectionWorker {
             .await?
     }
 
-    pub(crate) async fn describe(&mut self, query: SqlStr) -> Result<Describe<Sqlite>, Error> {
+    #[cfg(feature = "offline")]
+    pub(crate) async fn describe(
+        &mut self,
+        query: SqlStr,
+    ) -> Result<sqlx_core::describe::Describe<crate::Sqlite>, Error> {
         self.oneshot_cmd(|tx| Command::Describe { query, tx })
             .await?
     }
